@@ -2224,7 +2224,7 @@ function renderTempo(ctx, input) {
   const tempo = session2.global ? session2.global.tempo : 120;
   const playing = input.playing;
   label(ctx, "TEMPO", PivotX, TitleY3, 56, OpbTheme.Ink, "center", "normal");
-  drawReadouts(ctx, session2);
+  drawReadouts(ctx, session2, tempo);
   hLine(ctx, input.left, input.right, Row03);
   ctx.fillStyle = OpbTheme.Ink;
   ctx.beginPath();
@@ -2289,13 +2289,14 @@ function renderTempo(ctx, input) {
 function weightDistance(bpm) {
   return 340 - (Math.max(40, Math.min(200, bpm)) - 40) / 160 * 250;
 }
-function drawReadouts(ctx, session2) {
+function drawReadouts(ctx, session2, tempo) {
   const g = session2.global;
   const swing = g ? `${Math.round(g.swing * 100 / 255)}%` : "-";
   const level = g ? g.metronomeLevel === 0 ? "OFF" : `${percent(g.metronomeLevel)}` : "-";
   const sound = g ? METRONOME_SOUNDS[Math.min(g.metronomeSound, METRONOME_SOUNDS.length - 1)] : "-";
   const readouts = [
-    { x: 129, title: "SWING", value: swing, color: OpbTheme.Blue },
+    { x: 129, title: "BPM", value: tempo.toString(), color: OpbTheme.Green },
+    { x: 389, title: "SWING", value: swing, color: OpbTheme.Blue },
     { x: 1e3, title: "CLICK LEVEL", value: level, color: OpbTheme.Yellow },
     { x: 1285, title: "CLICK SOUND", value: sound, color: OpbTheme.Red }
   ];

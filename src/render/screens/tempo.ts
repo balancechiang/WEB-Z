@@ -18,7 +18,7 @@ export function renderTempo(ctx: CanvasRenderingContext2D, input: ScreenInput): 
   const playing = input.playing;
 
   label(ctx, 'TEMPO', PivotX, TitleY, 56, OpbTheme.Ink, 'center', 'normal');
-  drawReadouts(ctx, session);
+  drawReadouts(ctx, session, tempo);
   hLine(ctx, input.left, input.right, Row0);
 
   // Metronome body (trapezoid).
@@ -87,13 +87,14 @@ function weightDistance(bpm: number): number {
   return 340 - (Math.max(40, Math.min(200, bpm)) - 40) / 160 * 250;
 }
 
-function drawReadouts(ctx: CanvasRenderingContext2D, session: OpzSession): void {
+function drawReadouts(ctx: CanvasRenderingContext2D, session: OpzSession, tempo: number): void {
   const g = session.global;
   const swing = g ? `${Math.round(g.swing * 100 / 255)}%` : '-';
   const level = g ? (g.metronomeLevel === 0 ? 'OFF' : `${percent(g.metronomeLevel)}`) : '-';
   const sound = g ? METRONOME_SOUNDS[Math.min(g.metronomeSound, METRONOME_SOUNDS.length - 1)] : '-';
   const readouts = [
-    { x: 129, title: 'SWING', value: swing, color: OpbTheme.Blue },
+    { x: 129, title: 'BPM', value: tempo.toString(), color: OpbTheme.Green },
+    { x: 389, title: 'SWING', value: swing, color: OpbTheme.Blue },
     { x: 1000, title: 'CLICK LEVEL', value: level, color: OpbTheme.Yellow },
     { x: 1285, title: 'CLICK SOUND', value: sound, color: OpbTheme.Red },
   ];

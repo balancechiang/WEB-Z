@@ -1,0 +1,21 @@
+{
+  "name": "web-z",
+  "version": "0.1.2",
+  "private": true,
+  "type": "module",
+  "description": "WEB-Z 0.1.2 beta, an unofficial Web companion for the OP-Z",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "esbuild src/app/main.ts --bundle --outfile=dist/app.js --format=esm --target=es2022 --sourcemap",
+    "watch": "esbuild src/app/main.ts --bundle --outfile=dist/app.js --format=esm --target=es2022 --sourcemap --watch",
+    "serve": "esbuild src/app/main.ts --bundle --outfile=dist/app.js --format=esm --target=es2022 --sourcemap --servedir=. --serve=8080"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "esbuild": "^0.24.0",
+    "typescript": "^7.0.2"
+  },
+  "engines": {
+    "node": ">=22.6"
+  }
+}

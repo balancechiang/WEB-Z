@@ -1,12 +1,11 @@
 /**
  * Tempo screen — OPB.App/Screens/TempoScreen.cs → Canvas 2D.
  * A metronome whose pendulum swings with the beat and whose weight slides with the BPM.
- * Dragging up/down (handled by the canvas view) sets 40-200 BPM; swing and the metronome
- * click have small readouts on the sides.
+ * Swing and metronome settings appear in the header.
  */
 import type { OpzSession } from '../../session/opzSession.ts';
 import { OpbTheme } from '../theme.ts';
-import { label, hLine } from '../draw.ts';
+import { label, hLine, handle } from '../draw.ts';
 import { percent, METRONOME_SOUNDS } from '../displays.ts';
 import type { ScreenInput } from './index.ts';
 
@@ -18,7 +17,8 @@ export function renderTempo(ctx: CanvasRenderingContext2D, input: ScreenInput): 
   const tempo = session.global ? session.global.tempo : 120;
   const playing = input.playing;
 
-  label(ctx, 'TEMPO', input.right / 2, TitleY, 56, OpbTheme.Ink, 'center', 'normal');
+  label(ctx, 'TEMPO', PivotX, TitleY, 56, OpbTheme.Ink, 'center', 'normal');
+  drawReadouts(ctx, session);
   hLine(ctx, input.left, input.right, Row0);
 
   // Metronome body (trapezoid).
@@ -80,7 +80,6 @@ export function renderTempo(ctx: CanvasRenderingContext2D, input: ScreenInput): 
   ctx.stroke();
   ctx.restore();
 
-  drawReadouts(ctx, session, input);
 }
 
 /** Distance of the sliding weight from the pivot: higher tempo, lower weight. */
@@ -88,16 +87,19 @@ function weightDistance(bpm: number): number {
   return 340 - (Math.max(40, Math.min(200, bpm)) - 40) / 160 * 250;
 }
 
-function drawReadouts(ctx: CanvasRenderingContext2D, session: OpzSession, input: ScreenInput): void {
+function drawReadouts(ctx: CanvasRenderingContext2D, session: OpzSession): void {
   const g = session.global;
   const swing = g ? `${Math.round(g.swing * 100 / 255)}%` : '-';
-  label(ctx, 'SWING', 60, 300, 30, OpbTheme.Mid, 'left');
-  label(ctx, swing, 60, 350, 40, OpbTheme.Ink, 'left', 'normal');
-
-  const right = input.right - 60;
   const level = g ? (g.metronomeLevel === 0 ? 'OFF' : `${percent(g.metronomeLevel)}`) : '-';
   const sound = g ? METRONOME_SOUNDS[Math.min(g.metronomeSound, METRONOME_SOUNDS.length - 1)] : '-';
-  label(ctx, 'METRONOME', right, 300, 30, OpbTheme.Mid, 'right');
-  label(ctx, level, right, 350, 40, OpbTheme.Ink, 'right', 'normal');
-  label(ctx, sound, right, 410, 30, OpbTheme.Mid, 'right');
+  const readouts = [
+    { x: 129, title: 'SWING', value: swing, color: OpbTheme.Blue },
+    { x: 1000, title: 'CLICK LEVEL', value: level, color: OpbTheme.Yellow },
+    { x: 1285, title: 'CLICK SOUND', value: sound, color: OpbTheme.Red },
+  ];
+  for (const { x, title, value, color } of readouts) {
+    handle(ctx, x, TitleY + 2, color, 22);
+    label(ctx, title, x + 41, 24, 26, OpbTheme.Mid);
+    label(ctx, value, x + 41, 56, 36, OpbTheme.Ink, 'left', 'normal');
+  }
 }

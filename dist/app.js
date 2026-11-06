@@ -2048,12 +2048,12 @@ var GROUP_BRUSHES = [OpbTheme.Green, OpbTheme.Blue, OpbTheme.Yellow, OpbTheme.Re
 function renderMixer(ctx, input) {
   const session2 = input.session;
   const now = input.nowMs / 1e3;
-  label(ctx, "MIXER", input.right / 2, TitleY2, 56, OpbTheme.Ink, "center", "normal");
+  label(ctx, "MIXER", (input.left + input.right) / 2, TitleY2, 56, OpbTheme.Ink, "center", "normal");
   for (let g = 0; g < 4; g++) {
     handle(ctx, GROUP_X[g], TitleY2 + 2, GROUP_BRUSHES[g], 22);
     const gl = groupLevel(session2, g);
-    label(ctx, `${percent(gl)}`, GROUP_X[g] + 41, TitleY2, 36, OpbTheme.Ink, "left", "normal");
-    label(ctx, GROUP_NAMES[g], GROUP_X[g] + 41, TitleY2, 30, OpbTheme.Mid, "left");
+    label(ctx, GROUP_NAMES[g], GROUP_X[g] + 41, 24, 26, OpbTheme.Mid, "left");
+    label(ctx, `${percent(gl)}`, GROUP_X[g] + 41, 56, 36, OpbTheme.Ink, "left", "normal");
   }
   for (let t = 0; t < 8; t++) {
     const x = X0 + t * ColW2, cx = x + ColW2 / 2;
@@ -2223,7 +2223,8 @@ function renderTempo(ctx, input) {
   const session2 = input.session;
   const tempo = session2.global ? session2.global.tempo : 120;
   const playing = input.playing;
-  label(ctx, "TEMPO", input.right / 2, TitleY3, 56, OpbTheme.Ink, "center", "normal");
+  label(ctx, "TEMPO", PivotX, TitleY3, 56, OpbTheme.Ink, "center", "normal");
+  drawReadouts(ctx, session2);
   hLine(ctx, input.left, input.right, Row03);
   ctx.fillStyle = OpbTheme.Ink;
   ctx.beginPath();
@@ -2284,22 +2285,25 @@ function renderTempo(ctx, input) {
   ctx.lineTo(PivotX + 4, weightY + 2);
   ctx.stroke();
   ctx.restore();
-  drawReadouts(ctx, session2, input);
 }
 function weightDistance(bpm) {
   return 340 - (Math.max(40, Math.min(200, bpm)) - 40) / 160 * 250;
 }
-function drawReadouts(ctx, session2, input) {
+function drawReadouts(ctx, session2) {
   const g = session2.global;
   const swing = g ? `${Math.round(g.swing * 100 / 255)}%` : "-";
-  label(ctx, "SWING", 60, 300, 30, OpbTheme.Mid, "left");
-  label(ctx, swing, 60, 350, 40, OpbTheme.Ink, "left", "normal");
-  const right = input.right - 60;
   const level = g ? g.metronomeLevel === 0 ? "OFF" : `${percent(g.metronomeLevel)}` : "-";
   const sound = g ? METRONOME_SOUNDS[Math.min(g.metronomeSound, METRONOME_SOUNDS.length - 1)] : "-";
-  label(ctx, "METRONOME", right, 300, 30, OpbTheme.Mid, "right");
-  label(ctx, level, right, 350, 40, OpbTheme.Ink, "right", "normal");
-  label(ctx, sound, right, 410, 30, OpbTheme.Mid, "right");
+  const readouts = [
+    { x: 129, title: "SWING", value: swing, color: OpbTheme.Blue },
+    { x: 1e3, title: "CLICK LEVEL", value: level, color: OpbTheme.Yellow },
+    { x: 1285, title: "CLICK SOUND", value: sound, color: OpbTheme.Red }
+  ];
+  for (const { x, title, value, color } of readouts) {
+    handle(ctx, x, TitleY3 + 2, color, 22);
+    label(ctx, title, x + 41, 24, 26, OpbTheme.Mid);
+    label(ctx, value, x + 41, 56, 36, OpbTheme.Ink, "left", "normal");
+  }
 }
 
 // src/render/screens/project.ts
@@ -6119,7 +6123,6 @@ function setImmersive(on) {
   view?.resize();
   if (immersiveToggle) immersiveToggle.textContent = on ? "SHOW DEBUG" : "FULL SCREEN";
   immersiveToggle?.setAttribute("aria-pressed", String(on));
-  if (on) view?.setAutoRoute(true);
 }
 immersiveToggle?.addEventListener("click", () => {
   setImmersive(!immersive);
@@ -6715,7 +6718,6 @@ window.addEventListener("keydown", (e) => {
     setImmersive(false);
     return;
   }
-  if (immersive) return;
   if (e.key === "ArrowRight" || e.key === "Tab" && !e.shiftKey) {
     e.preventDefault();
     view?.nextScreen();

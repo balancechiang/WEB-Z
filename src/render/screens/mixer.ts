@@ -21,12 +21,12 @@ export function renderMixer(ctx: CanvasRenderingContext2D, input: ScreenInput): 
   const session: OpzSession = input.session;
   const now = input.nowMs / 1000;
 
-  label(ctx, 'MIXER', input.right / 2, TitleY, 56, OpbTheme.Ink, 'center', 'normal');
+  label(ctx, 'MIXER', (input.left + input.right) / 2, TitleY, 56, OpbTheme.Ink, 'center', 'normal');
   for (let g = 0; g < 4; g++) {
     handle(ctx, GROUP_X[g], TitleY + 2, GROUP_BRUSHES[g], 22);
     const gl = groupLevel(session, g);
-    label(ctx, `${percent(gl)}`, GROUP_X[g] + 41, TitleY, 36, OpbTheme.Ink, 'left', 'normal');
-    label(ctx, GROUP_NAMES[g], GROUP_X[g] + 41, TitleY, 30, OpbTheme.Mid, 'left');
+    label(ctx, GROUP_NAMES[g], GROUP_X[g] + 41, 24, 26, OpbTheme.Mid, 'left');
+    label(ctx, `${percent(gl)}`, GROUP_X[g] + 41, 56, 36, OpbTheme.Ink, 'left', 'normal');
   }
 
   for (let t = 0; t < 8; t++) {

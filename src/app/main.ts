@@ -148,7 +148,6 @@ function setImmersive(on: boolean): void {
   view?.resize();
   if (immersiveToggle) immersiveToggle.textContent = on ? 'SHOW DEBUG' : 'FULL SCREEN';
   immersiveToggle?.setAttribute('aria-pressed', String(on));
-  if (on) view?.setAutoRoute(true);
 }
 
 immersiveToggle?.addEventListener('click', () => {
@@ -775,7 +774,6 @@ wrAudit?.addEventListener('click', () => {
 // ---- keyboard shortcuts ----
 window.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && immersive && !document.fullscreenElement) { setImmersive(false); return; }
-  if (immersive) return;
   if (e.key === 'ArrowRight' || (e.key === 'Tab' && !e.shiftKey)) { e.preventDefault(); view?.nextScreen(); }
   else if (e.key === 'ArrowLeft' || (e.key === 'Tab' && e.shiftKey)) { e.preventDefault(); view?.prevScreen(); }
   else if (e.code === 'Space') { e.preventDefault(); view?.togglePlay(); }

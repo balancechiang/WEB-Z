@@ -115,10 +115,11 @@ let bleBusy = false;
 let gamepadTick: (() => void) | null = null;
 const batteryLabel = document.getElementById('device-battery');
 const transportLabel = document.getElementById('device-transport');
-const immersiveToggle = document.getElementById('immersive-toggle');
+const debugToggle = document.getElementById('debug-toggle');
+const fullscreenToggle = document.getElementById('fullscreen-toggle');
 const deviceMenu = document.getElementById('device-menu');
 const deviceMenuToggle = document.getElementById('device-menu-toggle');
-let immersive = false;
+let debugHidden = false;
 let squareHeld = false;
 let menuOpen = false;
 function updateDeviceBar(): void {
@@ -142,21 +143,23 @@ function setDeviceMenu(open: boolean): void {
   deviceMenuToggle?.setAttribute('aria-expanded', String(open));
 }
 
-function setImmersive(on: boolean): void {
-  immersive = on;
-  document.body.classList.toggle('immersive', on);
+debugToggle?.addEventListener('click', () => {
+  debugHidden = !debugHidden;
+  document.body.classList.toggle('debug-hidden', debugHidden);
   view?.resize();
-  if (immersiveToggle) immersiveToggle.textContent = on ? 'SHOW DEBUG' : 'FULL SCREEN';
-  immersiveToggle?.setAttribute('aria-pressed', String(on));
-}
+  debugToggle.textContent = debugHidden ? 'SHOW DEBUG' : 'HIDE DEBUG';
+  debugToggle.setAttribute('aria-pressed', String(debugHidden));
+});
 
-immersiveToggle?.addEventListener('click', () => {
-  setImmersive(!immersive);
-  if (immersive) void document.documentElement.requestFullscreen?.().catch(() => {});
-  else if (document.fullscreenElement) void document.exitFullscreen?.().catch(() => {});
+fullscreenToggle?.addEventListener('click', () => {
+  if (document.fullscreenElement) void document.exitFullscreen?.().catch(() => {});
+  else void document.documentElement.requestFullscreen?.().catch(() => {});
 });
 document.addEventListener('fullscreenchange', () => {
-  if (!document.fullscreenElement && immersive) setImmersive(false);
+  view?.resize();
+  const fullscreen = Boolean(document.fullscreenElement);
+  if (fullscreenToggle) fullscreenToggle.textContent = fullscreen ? 'EXIT FULL SCREEN' : 'FULL SCREEN';
+  fullscreenToggle?.setAttribute('aria-pressed', String(fullscreen));
 });
 deviceMenuToggle?.addEventListener('click', () => setDeviceMenu(!menuOpen));
 for (const button of document.querySelectorAll<HTMLButtonElement>('[data-device-page]')) {
@@ -209,7 +212,7 @@ function updateTimelineUi(state: PlayerState | null): void {
     tlSeek.value = String(state.cursor);
   }
   if (tlPlayBtn) {
-    tlPlayBtn.textContent = state.playing ? '❚❚ 暂停' : '▶ 回放';
+    tlPlayBtn.textContent = state.playing ? '❚❚ Pause' : '▶ Replay';
     tlPlayBtn.classList.toggle('active', state.playing);
   }
   tlLoopBtn?.classList.toggle('active', state.loop);
@@ -222,7 +225,7 @@ function updateTimelineUi(state: PlayerState | null): void {
 function updateRecUi(): void {
   if (!tlRecBtn) return;
   tlRecBtn.classList.toggle('active', recorder.recording);
-  tlRecBtn.textContent = recorder.recording ? '■ 停止' : '● 录制';
+  tlRecBtn.textContent = recorder.recording ? '■ Stop' : '● Record';
 }
 
 function updateLiveButton(): void {
@@ -267,7 +270,7 @@ async function connectLive(): Promise<void> {
   if (liveSession || liveConnecting) return;
   liveConnecting = true;
   updateLiveConnectButton();
-  setSource('CONNECTING · 请在浏览器弹窗里允许 MIDI / SysEx…');
+  setSource('CONNECTING · Allow MIDI / SysEx in the browser prompt…');
   try {
     const deckBridge = new URLSearchParams(location.search).get('deck-midi') === '1';
     const transport = await (deckBridge ? openDeckMidi() : openWebMidi());
@@ -297,9 +300,9 @@ async function connectLive(): Promise<void> {
     live.start();
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    setSource(`OFFLINE · ${msg}${capture ? ` · ${capture.frames.length} 帧时间轴仍可回放` : ''}`);
+    setSource(`OFFLINE · ${msg}${capture ? ` · ${capture.frames.length} frames available for replay` : ''}`);
     if (liveConnectBtn) {
-      liveConnectBtn.title = '权限被拒：地址栏锁形图标 → 网站设置 → MIDI 设备 → 允许，然后刷新页面再点 CONNECT OP-Z';
+      liveConnectBtn.title = 'MIDI permission denied. Allow MIDI in Site settings, reload, then click CONNECT OP-Z.';
     }
   } finally {
     liveConnecting = false;
@@ -339,7 +342,7 @@ async function installTimeline(cap: TimelineCapture, upTo: number): Promise<void
       attach(rebuilt);
     },
     onUpdate: updateTimelineUi,
-    onEnd: () => setSource(`TIMELINE · 回放结束 (${cap.frames.length} 帧 · ${cap.source})`),
+    onEnd: () => setSource(`TIMELINE · Replay finished (${cap.frames.length} frames · ${cap.source})`),
   });
   await player.seek(Math.min(upTo, cap.frames.length));
   updateTimelineUi(player.state);
@@ -348,11 +351,11 @@ async function installTimeline(cap: TimelineCapture, upTo: number): Promise<void
 async function loadCaptureText(text: string, source: string): Promise<void> {
   const cap = loadTimelineText(text, source);
   if (!cap.frames.length) {
-    setSource(`OFFLINE · 捕获文件无有效帧 (${source})`);
+    setSource(`OFFLINE · Capture contains no valid frames (${source})`);
     return;
   }
   await installTimeline(cap, cap.frames.length);
-  setSource(`OFFLINE · ${cap.frames.length} 帧时间轴 (${source}) · 点 ▶ 回放`);
+  setSource(`OFFLINE · ${cap.frames.length} frame timeline (${source}) · Click ▶ Replay`);
 }
 
 async function toggleReplay(): Promise<void> {
@@ -363,13 +366,13 @@ async function toggleReplay(): Promise<void> {
   }
   if (player.cursor >= capture.frames.length) await player.seek(0);
   player.play();
-  setSource(`TIMELINE · 回放中 ${capture.source}`);
+  setSource(`TIMELINE · Playing ${capture.source}`);
 }
 
 async function stepFrame(delta: number): Promise<void> {
   if (!player) return;
   await player.step(delta);
-  setSource(`TIMELINE · 单步 ${player.cursor}/${capture?.frames.length ?? 0}`);
+  setSource(`TIMELINE · Frame ${player.cursor}/${capture?.frames.length ?? 0}`);
 }
 
 function toggleRecording(): void {
@@ -377,17 +380,17 @@ function toggleRecording(): void {
     const frames = recorder.stop();
     updateRecUi();
     if (!frames.length) {
-      setSource('REC · 没有录到 SysEx 帧（需 LIVE 连接）');
+      setSource('REC · No SysEx frames recorded. Connect to OP-Z first.');
       return;
     }
     const cap: TimelineCapture = { frames, source: `REC ${frames.length} frames` };
     void installTimeline(cap, frames.length).then(() => {
-      setSource(`REC · ${frames.length} 帧 / ${frames[frames.length - 1].tMs} ms — 可回放或导出`);
+      setSource(`REC · ${frames.length} frames / ${frames[frames.length - 1].tMs} ms — Ready to replay or export`);
     });
   } else {
     recorder.start();
     updateRecUi();
-    setSource('REC · 正在录制实时 SysEx 帧…');
+    setSource('REC · Recording live SysEx frames…');
   }
 }
 
@@ -420,14 +423,14 @@ function download(filename: string, text: string, mime: string): void {
 function exportText(): void {
   if (!capture) return;
   download(`opb-frames-${stamp()}.txt`, toReplayText(capture), 'text/plain;charset=utf-8');
-  setSource(`EXPORT · ${capture.frames.length} 帧 → --replay 兼容文本`);
+  setSource(`EXPORT · ${capture.frames.length} frames → --replay-compatible text`);
 }
 
 function exportJson(): void {
   if (!capture) return;
   download(`opb-timeline-${stamp()}.json`, JSON.stringify(toTimelineJson(capture), null, 2) + '\n',
     'application/json;charset=utf-8');
-  setSource(`EXPORT · ${capture.frames.length} 帧 → 时间轴 JSON`);
+  setSource(`EXPORT · ${capture.frames.length} frames → timeline JSON`);
 }
 
 async function importFile(file: File): Promise<void> {
@@ -773,7 +776,6 @@ wrAudit?.addEventListener('click', () => {
 
 // ---- keyboard shortcuts ----
 window.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && immersive && !document.fullscreenElement) { setImmersive(false); return; }
   if (e.key === 'ArrowRight' || (e.key === 'Tab' && !e.shiftKey)) { e.preventDefault(); view?.nextScreen(); }
   else if (e.key === 'ArrowLeft' || (e.key === 'Tab' && e.shiftKey)) { e.preventDefault(); view?.prevScreen(); }
   else if (e.code === 'Space') { e.preventDefault(); view?.togglePlay(); }
@@ -821,7 +823,7 @@ async function boot(): Promise<void> {
     if (liveSession) return;
   }
   if (permission === 'denied' && liveConnectBtn) {
-    liveConnectBtn.title = 'MIDI 权限已被拒绝：地址栏锁形图标 → 网站设置 → MIDI 设备 → 允许，然后刷新页面';
+    liveConnectBtn.title = 'MIDI permission denied. Allow MIDI in Site settings and reload.';
   }
   await loadOffline();
 }
@@ -833,7 +835,7 @@ async function loadOffline(): Promise<void> {
     await loadCaptureText(await res.text(), captureUrl);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    setSource(`OFFLINE · 回放失败 ${msg}`);
+    setSource(`OFFLINE · Replay failed: ${msg}`);
   }
 }
 

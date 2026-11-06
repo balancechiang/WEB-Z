@@ -23,7 +23,7 @@ On Steam Deck, identify the OP-Z RawMIDI port with `amidi -l`. Substitute the de
 python3 serve_localhost.py --port 8766 --deck-midi hw:2,0,0
 ```
 
-Open the URL printed by the launcher and click **CONNECT OP-Z**. The local bridge supports read-only device synchronization. Use **FULL SCREEN** to hide debug controls and **SHOW DEBUG** to restore them.
+Open the URL printed by the launcher and click **CONNECT OP-Z**. The local bridge supports read-only device synchronization. Use **HIDE DEBUG** and **SHOW DEBUG** to toggle the tools in the current window. **FULL SCREEN** separately toggles browser fullscreen.
 
 GitHub Pages serves the checked-in browser build from `main`. When updating the site, rebuild and include `dist/app.js` in the commit.
 

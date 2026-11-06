@@ -6094,10 +6094,11 @@ var bleBusy = false;
 var gamepadTick = null;
 var batteryLabel = document.getElementById("device-battery");
 var transportLabel = document.getElementById("device-transport");
-var immersiveToggle = document.getElementById("immersive-toggle");
+var debugToggle = document.getElementById("debug-toggle");
+var fullscreenToggle = document.getElementById("fullscreen-toggle");
 var deviceMenu = document.getElementById("device-menu");
 var deviceMenuToggle = document.getElementById("device-menu-toggle");
-var immersive = false;
+var debugHidden = false;
 var squareHeld = false;
 var menuOpen = false;
 function updateDeviceBar() {
@@ -6117,22 +6118,24 @@ function setDeviceMenu(open) {
   if (deviceMenu) deviceMenu.hidden = !open;
   deviceMenuToggle?.setAttribute("aria-expanded", String(open));
 }
-function setImmersive(on) {
-  immersive = on;
-  document.body.classList.toggle("immersive", on);
+debugToggle?.addEventListener("click", () => {
+  debugHidden = !debugHidden;
+  document.body.classList.toggle("debug-hidden", debugHidden);
   view?.resize();
-  if (immersiveToggle) immersiveToggle.textContent = on ? "SHOW DEBUG" : "FULL SCREEN";
-  immersiveToggle?.setAttribute("aria-pressed", String(on));
-}
-immersiveToggle?.addEventListener("click", () => {
-  setImmersive(!immersive);
-  if (immersive) void document.documentElement.requestFullscreen?.().catch(() => {
+  debugToggle.textContent = debugHidden ? "SHOW DEBUG" : "HIDE DEBUG";
+  debugToggle.setAttribute("aria-pressed", String(debugHidden));
+});
+fullscreenToggle?.addEventListener("click", () => {
+  if (document.fullscreenElement) void document.exitFullscreen?.().catch(() => {
   });
-  else if (document.fullscreenElement) void document.exitFullscreen?.().catch(() => {
+  else void document.documentElement.requestFullscreen?.().catch(() => {
   });
 });
 document.addEventListener("fullscreenchange", () => {
-  if (!document.fullscreenElement && immersive) setImmersive(false);
+  view?.resize();
+  const fullscreen = Boolean(document.fullscreenElement);
+  if (fullscreenToggle) fullscreenToggle.textContent = fullscreen ? "EXIT FULL SCREEN" : "FULL SCREEN";
+  fullscreenToggle?.setAttribute("aria-pressed", String(fullscreen));
 });
 deviceMenuToggle?.addEventListener("click", () => setDeviceMenu(!menuOpen));
 for (const button6 of document.querySelectorAll("[data-device-page]")) {
@@ -6187,7 +6190,7 @@ function updateTimelineUi(state) {
     tlSeek.value = String(state.cursor);
   }
   if (tlPlayBtn) {
-    tlPlayBtn.textContent = state.playing ? "\u275A\u275A \u6682\u505C" : "\u25B6 \u56DE\u653E";
+    tlPlayBtn.textContent = state.playing ? "\u275A\u275A Pause" : "\u25B6 Replay";
     tlPlayBtn.classList.toggle("active", state.playing);
   }
   tlLoopBtn?.classList.toggle("active", state.loop);
@@ -6198,7 +6201,7 @@ function updateTimelineUi(state) {
 function updateRecUi() {
   if (!tlRecBtn) return;
   tlRecBtn.classList.toggle("active", recorder.recording);
-  tlRecBtn.textContent = recorder.recording ? "\u25A0 \u505C\u6B62" : "\u25CF \u5F55\u5236";
+  tlRecBtn.textContent = recorder.recording ? "\u25A0 Stop" : "\u25CF Record";
 }
 function updateLiveButton() {
   if (tlLiveBtn) tlLiveBtn.disabled = liveSession == null;
@@ -6226,7 +6229,7 @@ async function connectLive() {
   if (liveSession || liveConnecting) return;
   liveConnecting = true;
   updateLiveConnectButton();
-  setSource("CONNECTING \xB7 \u8BF7\u5728\u6D4F\u89C8\u5668\u5F39\u7A97\u91CC\u5141\u8BB8 MIDI / SysEx\u2026");
+  setSource("CONNECTING \xB7 Allow MIDI / SysEx in the browser prompt\u2026");
   try {
     const deckBridge = new URLSearchParams(location.search).get("deck-midi") === "1";
     const transport = await (deckBridge ? openDeckMidi() : openWebMidi());
@@ -6254,9 +6257,9 @@ async function connectLive() {
     live.start();
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    setSource(`OFFLINE \xB7 ${msg}${capture ? ` \xB7 ${capture.frames.length} \u5E27\u65F6\u95F4\u8F74\u4ECD\u53EF\u56DE\u653E` : ""}`);
+    setSource(`OFFLINE \xB7 ${msg}${capture ? ` \xB7 ${capture.frames.length} frames available for replay` : ""}`);
     if (liveConnectBtn) {
-      liveConnectBtn.title = "\u6743\u9650\u88AB\u62D2\uFF1A\u5730\u5740\u680F\u9501\u5F62\u56FE\u6807 \u2192 \u7F51\u7AD9\u8BBE\u7F6E \u2192 MIDI \u8BBE\u5907 \u2192 \u5141\u8BB8\uFF0C\u7136\u540E\u5237\u65B0\u9875\u9762\u518D\u70B9 CONNECT OP-Z";
+      liveConnectBtn.title = "MIDI permission denied. Allow MIDI in Site settings, reload, then click CONNECT OP-Z.";
     }
   } finally {
     liveConnecting = false;
@@ -6288,7 +6291,7 @@ async function installTimeline(cap, upTo) {
       attach(rebuilt);
     },
     onUpdate: updateTimelineUi,
-    onEnd: () => setSource(`TIMELINE \xB7 \u56DE\u653E\u7ED3\u675F (${cap.frames.length} \u5E27 \xB7 ${cap.source})`)
+    onEnd: () => setSource(`TIMELINE \xB7 Replay finished (${cap.frames.length} frames \xB7 ${cap.source})`)
   });
   await player.seek(Math.min(upTo, cap.frames.length));
   updateTimelineUi(player.state);
@@ -6296,11 +6299,11 @@ async function installTimeline(cap, upTo) {
 async function loadCaptureText(text, source) {
   const cap = loadTimelineText(text, source);
   if (!cap.frames.length) {
-    setSource(`OFFLINE \xB7 \u6355\u83B7\u6587\u4EF6\u65E0\u6709\u6548\u5E27 (${source})`);
+    setSource(`OFFLINE \xB7 Capture contains no valid frames (${source})`);
     return;
   }
   await installTimeline(cap, cap.frames.length);
-  setSource(`OFFLINE \xB7 ${cap.frames.length} \u5E27\u65F6\u95F4\u8F74 (${source}) \xB7 \u70B9 \u25B6 \u56DE\u653E`);
+  setSource(`OFFLINE \xB7 ${cap.frames.length} frame timeline (${source}) \xB7 Click \u25B6 Replay`);
 }
 async function toggleReplay() {
   if (!player || !capture || !capture.frames.length) return;
@@ -6310,29 +6313,29 @@ async function toggleReplay() {
   }
   if (player.cursor >= capture.frames.length) await player.seek(0);
   player.play();
-  setSource(`TIMELINE \xB7 \u56DE\u653E\u4E2D ${capture.source}`);
+  setSource(`TIMELINE \xB7 Playing ${capture.source}`);
 }
 async function stepFrame(delta) {
   if (!player) return;
   await player.step(delta);
-  setSource(`TIMELINE \xB7 \u5355\u6B65 ${player.cursor}/${capture?.frames.length ?? 0}`);
+  setSource(`TIMELINE \xB7 Frame ${player.cursor}/${capture?.frames.length ?? 0}`);
 }
 function toggleRecording() {
   if (recorder.recording) {
     const frames = recorder.stop();
     updateRecUi();
     if (!frames.length) {
-      setSource("REC \xB7 \u6CA1\u6709\u5F55\u5230 SysEx \u5E27\uFF08\u9700 LIVE \u8FDE\u63A5\uFF09");
+      setSource("REC \xB7 No SysEx frames recorded. Connect to OP-Z first.");
       return;
     }
     const cap = { frames, source: `REC ${frames.length} frames` };
     void installTimeline(cap, frames.length).then(() => {
-      setSource(`REC \xB7 ${frames.length} \u5E27 / ${frames[frames.length - 1].tMs} ms \u2014 \u53EF\u56DE\u653E\u6216\u5BFC\u51FA`);
+      setSource(`REC \xB7 ${frames.length} frames / ${frames[frames.length - 1].tMs} ms \u2014 Ready to replay or export`);
     });
   } else {
     recorder.start();
     updateRecUi();
-    setSource("REC \xB7 \u6B63\u5728\u5F55\u5236\u5B9E\u65F6 SysEx \u5E27\u2026");
+    setSource("REC \xB7 Recording live SysEx frames\u2026");
   }
 }
 function returnToLive() {
@@ -6360,7 +6363,7 @@ function download(filename, text, mime) {
 function exportText() {
   if (!capture) return;
   download(`opb-frames-${stamp()}.txt`, toReplayText(capture), "text/plain;charset=utf-8");
-  setSource(`EXPORT \xB7 ${capture.frames.length} \u5E27 \u2192 --replay \u517C\u5BB9\u6587\u672C`);
+  setSource(`EXPORT \xB7 ${capture.frames.length} frames \u2192 --replay-compatible text`);
 }
 function exportJson() {
   if (!capture) return;
@@ -6369,7 +6372,7 @@ function exportJson() {
     JSON.stringify(toTimelineJson(capture), null, 2) + "\n",
     "application/json;charset=utf-8"
   );
-  setSource(`EXPORT \xB7 ${capture.frames.length} \u5E27 \u2192 \u65F6\u95F4\u8F74 JSON`);
+  setSource(`EXPORT \xB7 ${capture.frames.length} frames \u2192 timeline JSON`);
 }
 async function importFile(file) {
   await loadCaptureText(await file.text(), file.name);
@@ -6714,10 +6717,6 @@ wrAudit?.addEventListener("click", () => {
   setSource("AUDIT \xB7 transaction diff / frames / phase history exported");
 });
 window.addEventListener("keydown", (e) => {
-  if (e.key === "Escape" && immersive && !document.fullscreenElement) {
-    setImmersive(false);
-    return;
-  }
   if (e.key === "ArrowRight" || e.key === "Tab" && !e.shiftKey) {
     e.preventDefault();
     view?.nextScreen();
@@ -6773,7 +6772,7 @@ async function boot() {
     if (liveSession) return;
   }
   if (permission === "denied" && liveConnectBtn) {
-    liveConnectBtn.title = "MIDI \u6743\u9650\u5DF2\u88AB\u62D2\u7EDD\uFF1A\u5730\u5740\u680F\u9501\u5F62\u56FE\u6807 \u2192 \u7F51\u7AD9\u8BBE\u7F6E \u2192 MIDI \u8BBE\u5907 \u2192 \u5141\u8BB8\uFF0C\u7136\u540E\u5237\u65B0\u9875\u9762";
+    liveConnectBtn.title = "MIDI permission denied. Allow MIDI in Site settings and reload.";
   }
   await loadOffline();
 }
@@ -6784,7 +6783,7 @@ async function loadOffline() {
     await loadCaptureText(await res.text(), captureUrl);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    setSource(`OFFLINE \xB7 \u56DE\u653E\u5931\u8D25 ${msg}`);
+    setSource(`OFFLINE \xB7 Replay failed: ${msg}`);
   }
 }
 refreshBleUi();

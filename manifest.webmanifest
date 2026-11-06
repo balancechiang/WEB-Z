@@ -1,0 +1,20 @@
+{
+  "id": "./",
+  "name": "WEB-Z 0.1.2 Beta",
+  "short_name": "WEB-Z",
+  "description": "Unofficial web port of OP-B (OP-Z-Windows) for the Teenage Engineering OP-Z. Version 0.1.2 beta.",
+  "lang": "en",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#171717",
+  "theme_color": "#1f1f1f",
+  "categories": ["music", "utilities", "productivity"],
+  "icons": [
+    { "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "./icons/opb-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "./icons/opb-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "./icons/opb-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

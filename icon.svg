@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="OP-B">
+  <rect width="512" height="512" rx="96" fill="#1f1f1f"/>
+  <rect x="32" y="32" width="448" height="448" rx="64" fill="#d0d0d0"/>
+  <rect x="56" y="56" width="400" height="400" rx="40" fill="none" stroke="#b3b3b3" stroke-width="6"/>
+  <g>
+    <circle cx="152" cy="176" r="52" fill="#025a30"/>
+    <circle cx="256" cy="176" r="52" fill="#175e83"/>
+    <circle cx="360" cy="176" r="52" fill="#ebb000"/>
+    <circle cx="152" cy="288" r="52" fill="#d11d32"/>
+    <circle cx="256" cy="288" r="52" fill="#131313"/>
+    <circle cx="360" cy="288" r="52" fill="#f2f2f2" stroke="#131313" stroke-width="6"/>
+  </g>
+  <g fill="#131313">
+    <rect x="96" y="376" width="64" height="24" rx="4"/>
+    <rect x="168" y="376" width="64" height="24" rx="4"/>
+    <rect x="240" y="376" width="64" height="24" rx="4"/>
+    <rect x="312" y="376" width="64" height="24" rx="4"/>
+  </g>
+  <rect x="96" y="376" width="64" height="24" rx="4" fill="#d11d32"/>
+</svg>

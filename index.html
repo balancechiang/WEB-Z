@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#1f1f1f" />
+  <meta name="description" content="WEB-Z 0.1.2 Beta, an unofficial web port of OP-B (OP-Z-Windows)." />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+  <link rel="icon" href="./icons/opb-192.png" sizes="192x192" type="image/png" />
+  <link rel="apple-touch-icon" href="./icons/opb-192.png" />
+  <title>WEB-Z 0.1.2 BETA</title>
+  <style>
+    :root {
+      --bg: #d0d0d0;
+      --rule: #b3b3b3;
+      --mid: #808080;
+      --ink: #131313;
+      --red: #d11d32;
+      --yellow: #ebb000;
+      --green: #025a30;
+      --blue: #175e83;
+      --white: #f2f2f2;
+      --font: "Bahnschrift", "DIN Condensed", "Roboto Condensed", "Segoe UI", system-ui, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; background: #171717; color: var(--ink); font-family: var(--font); }
+    body { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+    header {
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+      padding: 8px 14px; background: #1f1f1f; color: var(--white);
+      border-bottom: 1px solid #000;
+    }
+    header .title { font-weight: 600; font-size: 18px; letter-spacing: 0.5px; }
+    header .meta { font-size: 13px; color: #b9b9b9; }
+    header .source { font-size: 12px; color: var(--yellow); max-width: 40ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .screens { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+    .group { display: flex; align-items: center; gap: 5px; }
+    .group + .group { margin-left: 8px; padding-left: 9px; border-left: 1px solid #3a3a3a; }
+    .group > span { font-size: 10px; letter-spacing: 1px; color: #6f6f6f; text-transform: uppercase; }
+    button {
+      font-family: var(--font); font-size: 13px; font-weight: 600;
+      border: 1px solid #4a4a4a; background: #2a2a2a; color: var(--white);
+      border-radius: 6px; padding: 5px 10px; cursor: pointer; white-space: nowrap;
+    }
+    button:hover { background: #343434; }
+    button.active { background: var(--green); border-color: var(--green); color: var(--white); }
+    button#play { background: var(--blue); border-color: var(--blue); min-width: 86px; }
+    button#auto { font-size: 12px; }
+    button#auto.active { background: var(--yellow); border-color: var(--yellow); color: var(--ink); }
+    /* Stage 7: BLE-MIDI / Gaming Mode status chips. */
+    .stage7-chip {
+      font-size: 10px; font-weight: 600; letter-spacing: 0.5px; white-space: nowrap;
+      padding: 3px 7px; border-radius: 4px; border: 1px solid #4a4a4a; color: #9c9c9c;
+    }
+    .stage7-chip.on { color: var(--green); border-color: var(--green); }
+    .stage7-chip.warn { color: var(--yellow); border-color: var(--yellow); }
+    button#ble-connect { font-size: 12px; border-color: var(--blue); }
+    button#ble-connect:disabled { opacity: 0.4; cursor: not-allowed; }
+    button#ble-connect.active { background: var(--blue); border-color: var(--blue); }
+    .spacer { flex: 1; }
+    .nav {
+      padding: 7px 14px; background: #242424; border-bottom: 1px solid #000;
+      max-height: 26vh; overflow-y: auto;
+    }
+    .timeline {
+      display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+      padding: 6px 14px; background: #1b1b1b; border-bottom: 1px solid #000;
+    }
+    .timeline .tl-label { font-size: 10px; letter-spacing: 1px; color: #6f6f6f; }
+    .timeline button { font-size: 12px; padding: 4px 8px; }
+    .timeline button.active { background: var(--yellow); border-color: var(--yellow); color: var(--ink); }
+    .timeline button#tl-rec.active { background: var(--red); border-color: var(--red); color: var(--white); }
+    .timeline button:disabled { opacity: 0.4; cursor: not-allowed; }
+    #tl-seek { flex: 1; min-width: 130px; accent-color: var(--yellow); }
+    #tl-speed {
+      background: #2a2a2a; color: var(--white); border: 1px solid #4a4a4a;
+      border-radius: 6px; padding: 4px; font-family: var(--font); font-size: 12px;
+    }
+    #tl-info { font-size: 12px; color: #b9b9b9; min-width: 21ch; font-variant-numeric: tabular-nums; }
+    .writebar {
+      display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+      padding: 6px 14px; background: #201d17; border-bottom: 1px solid #000;
+    }
+    .writebar .wr-label { font-size: 10px; letter-spacing: 1px; color: var(--yellow); }
+    .writebar button { font-size: 12px; padding: 4px 8px; }
+    .writebar select, .writebar input {
+      background: #2a2a2a; color: var(--white); border: 1px solid #4a4a4a;
+      border-radius: 6px; padding: 4px; font-family: var(--font); font-size: 12px;
+    }
+    .writebar input { width: 64px; }
+    .wr-field { display: flex; align-items: center; gap: 4px; font-size: 10px; letter-spacing: 1px; color: #8c8c8c; }
+    .wr-chip {
+      font-size: 11px; font-weight: 600; letter-spacing: 0.5px;
+      padding: 3px 8px; border-radius: 4px; border: 1px solid #4a4a4a; white-space: nowrap;
+    }
+    .wr-chip.wr-dry { color: var(--yellow); border-color: var(--yellow); }
+    .wr-chip.wr-armed { color: var(--white); background: var(--red); border-color: var(--red); }
+    .wr-info { font-size: 12px; color: #b9b9b9; min-width: 28ch; font-variant-numeric: tabular-nums; }
+    .wr-sep { width: 1px; height: 20px; background: #3a3a3a; margin: 0 3px; }
+    button#wr-toggle.active { background: var(--yellow); border-color: var(--yellow); color: var(--ink); }
+    button#wr-arm.active { background: var(--red); border-color: var(--red); color: var(--white); }
+    button#wr-commit { border-color: var(--red); }
+    button#wr-commit:not(:disabled) { background: var(--red); color: var(--white); }
+    .writebar button:disabled { opacity: 0.4; cursor: not-allowed; }
+    @media (max-width: 720px) { .writebar .wr-label, .wr-sep, .wr-info { display: none; } }
+    main { flex: 1; position: relative; min-height: 0; }
+    #screen { width: 100%; height: 100%; display: block; touch-action: none; }
+    body.immersive > :is(header, .nav, .timeline, .writebar, footer) { display: none; }
+    .device-bar {
+      position: relative; display: grid; grid-template-columns: 1fr auto 1fr;
+      align-items: center; gap: 8px; padding: 6px 14px; flex: none;
+      background: #171717; color: #b9b9b9;
+    }
+    .device-bar strong { color: var(--yellow); font-size: 1.3rem; }
+    .device-actions { display: flex; justify-content: flex-end; gap: 6px; }
+    .device-menu { position: absolute; right: 14px; bottom: 100%; z-index: 2;
+      background: #171717; padding: 8px; max-width: 90vw; }
+    .device-menu:not([hidden]) { display: flex; flex-wrap: wrap; gap: 6px; }
+    footer { padding: 5px 14px; background: #1f1f1f; color: #8c8c8c; font-size: 12px; }
+    kbd { background: #2a2a2a; border: 1px solid #4a4a4a; border-radius: 4px; padding: 1px 6px; font-family: var(--font); }
+    @media (max-width: 720px) { .group > span, .timeline .tl-label, .source { display: none; } }
+  </style>
+</head>
+<body>
+  <header>
+    <span class="title">WEB-Z 0.1.2 BETA · WEB</span>
+    <span id="status" class="meta">stopped</span>
+    <button id="play">▶ Play</button>
+    <button id="auto" title="Follow the device: switch screen from held buttons / active track">AUTO</button>
+    <button id="live-connect" title="USB Web MIDI needs a user gesture on the first visit. Click, then allow SysEx in the browser prompt. If the permission was denied, open site settings -> MIDI devices -> Allow, then reload.">CONNECT OP-Z</button>
+    <button id="ble-connect" title="Web Bluetooth must be started by a user gesture; USB Web MIDI stays the default">BLE CONNECT</button>
+    <span id="ble-status" class="stage7-chip">BLE: CHECKING</span>
+    <span id="pad-status" class="stage7-chip">PAD: --</span>
+    <span class="spacer"></span>
+    <span id="source" class="source">booting…</span>
+  </header>
+  <div class="nav">
+    <div class="screens">
+      <div class="group"><span>Main</span>
+        <button data-screen="track">Track</button>
+        <button data-screen="mixer">Mixer</button>
+        <button data-screen="tempo">Tempo</button>
+      </div>
+      <div class="group"><span>Pages</span>
+        <button data-screen="project">Project</button>
+        <button data-screen="tape">Tape</button>
+        <button data-screen="perform">Perform</button>
+      </div>
+      <div class="group"><span>Tracks</span>
+        <button data-screen="master">Master</button>
+        <button data-screen="module">Module</button>
+        <button data-screen="lights">Lights</button>
+        <button data-screen="motiontrack">Motion Trk</button>
+      </div>
+      <div class="group"><span>Tools</span>
+        <button data-screen="steps">Steps</button>
+        <button data-screen="configurator">Config</button>
+        <button data-screen="photomatic">Photomatic</button>
+        <button data-screen="motion">Motion</button>
+        <button data-screen="midisetup">MIDI</button>
+        <button data-screen="devices">Devices</button>
+      </div>
+    </div>
+  </div>
+  <div class="timeline">
+    <span class="tl-label">TIMELINE</span>
+    <button id="tl-rewind" title="Rewind to the first frame">⏮</button>
+    <button id="tl-step-back" title="Previous frame">◀|</button>
+    <button id="tl-play" title="Play / pause the SysEx timeline">▶ 回放</button>
+    <button id="tl-step" title="Next frame">|▶</button>
+    <button id="tl-loop" title="Loop the timeline">LOOP</button>
+    <input id="tl-seek" type="range" min="0" max="0" value="0" step="1" aria-label="Timeline frame" />
+    <select id="tl-speed" aria-label="Playback speed">
+      <option value="0.5">0.5×</option>
+      <option value="1" selected>1×</option>
+      <option value="2">2×</option>
+      <option value="4">4×</option>
+    </select>
+    <span id="tl-info">loading capture…</span>
+    <button id="tl-rec" title="Record live SysEx frames">● 录制</button>
+    <button id="tl-live" title="Return to the live session" disabled>↺ LIVE</button>
+    <button id="tl-export" title="Export as ./OP-B --replay compatible text">⬇ TXT</button>
+    <button id="tl-export-json" title="Export structured timeline JSON">⬇ JSON</button>
+    <button id="tl-import" title="Load a capture (.txt) or timeline (.json)">⬆ 导入</button>
+    <input id="tl-file" type="file" accept=".txt,.json,text/plain,application/json" hidden />
+  </div>
+  <div class="writebar">
+    <span class="wr-label">WRITE · STAGE 6</span>
+    <button id="wr-toggle" title="OFF keeps all 16 screens read-only; ON opens the DRY-RUN write editor">WRITE: OFF</button>
+    <select id="wr-editor" aria-label="Write editor">
+      <option value="midi-config">MIDI CONFIG</option>
+      <option value="pattern-bank">PATTERN BANK</option>
+      <option value="file-service">FILE SERVICE</option>
+    </select>
+    <span id="wr-mode" class="wr-chip wr-dry">DRY RUN</span>
+    <span id="wr-evidence" class="wr-chip">UNKNOWN</span>
+    <span class="wr-sep"></span>
+    <label class="wr-field">VALUE <input id="wr-value" type="number" min="0" max="255" value="74" aria-label="Edit value" /></label>
+    <button id="wr-stage" title="Stage one proven-safe typed edit into the write-copy (no frames sent)">+ STAGE EDIT</button>
+    <button id="wr-reset" title="Discard staged edits and restore the exact baseline">RESET</button>
+    <button id="wr-refresh" title="Re-read a fresh baseline from the device">↻ BASELINE</button>
+    <span class="wr-sep"></span>
+    <button id="wr-arm" title="Gate 1: unlock real device sends (LIVE + device baseline only)">ARM ⚠</button>
+    <button id="wr-commit" title="Gate 2: explicitly confirm the write" disabled>COMMIT</button>
+    <button id="wr-rollback" title="Restore the exact captured baseline and read back again" disabled>ROLLBACK</button>
+    <span class="wr-sep"></span>
+    <button id="wr-backup" title="Export the exact baseline bytes — keep this BEFORE arming">⬇ BACKUP</button>
+    <button id="wr-audit" title="Export the structured transaction audit / reversible plan">⬇ AUDIT</button>
+    <span id="wr-info" class="wr-info">editor OFF · read-only</span>
+  </div>
+  <main>
+    <canvas id="screen"></canvas>
+  </main>
+  <section class="device-bar" aria-label="OP-Z status">
+    <span id="device-battery">OP-Z NOT CONNECTED</span>
+    <strong id="device-transport">■ 1</strong>
+    <div class="device-actions">
+      <button id="immersive-toggle" aria-pressed="false">FULL SCREEN</button>
+      <button id="device-menu-toggle" aria-controls="device-menu" aria-expanded="false" aria-label="Screen menu">▭</button>
+    </div>
+    <div id="device-menu" class="device-menu" hidden>
+      <button data-device-page="follow">OP-Z</button>
+      <button data-device-page="configurator">CONFIGURATOR</button>
+      <button data-device-page="photomatic">PHOTOMATIC</button>
+      <button data-device-page="motion">MOTION</button>
+      <button data-device-page="midisetup">MIDI SETUP</button>
+      <button data-device-page="devices">DEVICES</button>
+    </div>
+  </section>
+  <footer>
+    <a href="./credits.html" style="color:inherit">WEB-Z 0.1.2 BETA · OP-B web port · Credits</a> ·
+    <kbd>←</kbd>/<kbd>→</kbd> or <kbd>Tab</kbd> cycle 16 screens · <kbd>1</kbd>–<kbd>9</kbd>,<kbd>0</kbd> jump · <kbd>Space</kbd> transport · <kbd>A</kbd> auto-route · <kbd>P</kbd> timeline · <kbd>R</kbd> record · <kbd>L</kbd> loop · <kbd>[</kbd>/<kbd>]</kbd> step · <kbd>W</kbd> write editor · <kbd>E</kbd> cycle editor · Stage 6 writes are DRY RUN until ARM + COMMIT · Stage 7: <b>BLE CONNECT</b> needs a user gesture; PAD = D-pad/LB/RB screens, A play, B AUTO, X timeline, Y loop, LT/RT step, Start write editor (DRY RUN only)
+  </footer>
+  <script type="module" src="./dist/app.js"></script>
+</body>
+</html>

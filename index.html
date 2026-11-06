@@ -8,8 +8,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <link rel="manifest" href="./manifest.webmanifest" />
-  <link rel="icon" href="./icon.svg" type="image/svg+xml" />
-  <link rel="icon" href="./icons/opb-192.png" sizes="192x192" type="image/png" />
+  <link rel="icon" href="./icon.svg?v=2" type="image/svg+xml" sizes="any" />
   <link rel="apple-touch-icon" href="./icons/opb-192.png" />
   <title>WEB-Z 0.1.2 BETA</title>
   <style>
@@ -115,14 +114,15 @@
       min-height: clamp(48px, 5.5vw, 88px); background: #131313; color: #a0a0a0;
     }
     .device-bar button, .device-menu button { border: 0; background: transparent; color: inherit; }
-    .device-status { display: flex; align-items: center; gap: .45em; padding: 0; font-size: clamp(12px, 2.5vw, 42px); }
-    .device-status svg { width: 1em; height: 1em; }
+    .device-status { display: flex; align-items: center; gap: .45em; padding: 0; line-height: 1; font-size: clamp(12px, 2.5vw, 42px); }
+    .device-bar svg { display: block; flex: none; width: 1em; height: 1em; }
     #device-transport-button { color: #eee; font-size: clamp(21px, 3.5vw, 58px); }
     #device-transport { color: var(--yellow); }
     .transport-play, [data-playing="true"] .transport-stop { display: none; }
     [data-playing="true"] .transport-play { display: initial; }
-    .device-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 4px; }
-    #device-menu-toggle { color: #eee; font-size: clamp(22px, 3.4vw, 54px); }
+    .device-actions { display: flex; justify-content: flex-end; align-items: center; gap: 4px; }
+    .device-actions button { line-height: 1; }
+    #device-menu-toggle { display: grid; place-items: center; padding: 0; color: #eee; font-size: clamp(22px, 3.4vw, 54px); }
     .device-menu { position: absolute; inset: 0; z-index: 2; background: #131313f2; color: #fff; container-type: size; }
     .device-menu:not([hidden]) { display: grid; place-content: center; }
     .device-menu button { font-size: clamp(14px, min(4cqw, 7.88cqh), 64px); line-height: 1.625; }
@@ -242,7 +242,7 @@
     <div class="device-actions">
       <button id="debug-toggle" aria-pressed="false">HIDE DEBUG</button>
       <button id="fullscreen-toggle" aria-pressed="false">FULL SCREEN</button>
-      <button id="device-menu-toggle" aria-controls="device-menu" aria-expanded="false" aria-label="Screen menu">▭</button>
+      <button id="device-menu-toggle" aria-controls="device-menu" aria-expanded="false" aria-label="Screen menu"><svg viewBox="0 0 56 56" aria-hidden="true"><rect x="2" y="13" width="52" height="30" fill="none" stroke="currentColor" stroke-width="3"/></svg></button>
     </div>
   </section>
   <footer>

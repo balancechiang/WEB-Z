@@ -14,13 +14,14 @@
  *      the permission is already granted, otherwise it waits for the real user gesture.
  *      index.html and dist/app.js both changed, so the cache must be invalidated.
  */
-const CACHE_VERSION = 'web-z-v0.1.2-status-menu';
+const CACHE_VERSION = 'web-z-v0.1.2-icon-alignment';
 const CACHE_NAME = `${CACHE_VERSION}-static`;
 const PRECACHE = [
   './',
   './index.html',
   './manifest.webmanifest',
   './icon.svg',
+  './icon.svg?v=2',
   './icons/opb-192.png',
   './icons/opb-512.png',
   './icons/opb-512-maskable.png',

@@ -14,7 +14,7 @@
  *      the permission is already granted, otherwise it waits for the real user gesture.
  *      index.html and dist/app.js both changed, so the cache must be invalidated.
  */
-const CACHE_VERSION = 'web-z-v0.1.2-tempo-bpm';
+const CACHE_VERSION = 'web-z-v0.1.2-status-menu';
 const CACHE_NAME = `${CACHE_VERSION}-static`;
 const PRECACHE = [
   './',

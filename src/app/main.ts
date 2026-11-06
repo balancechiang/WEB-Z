@@ -114,33 +114,47 @@ let bleBusy = false;
 /** Assigned once the write controller exists; attach() runs before that. */
 let gamepadTick: (() => void) | null = null;
 const batteryLabel = document.getElementById('device-battery');
+const batteryFill = document.getElementById('device-battery-fill');
 const transportLabel = document.getElementById('device-transport');
+const transportButton = document.getElementById('device-transport-button');
 const debugToggle = document.getElementById('debug-toggle');
 const fullscreenToggle = document.getElementById('fullscreen-toggle');
 const deviceMenu = document.getElementById('device-menu');
 const deviceMenuToggle = document.getElementById('device-menu-toggle');
+const devicePages = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-device-page]'));
 let debugHidden = false;
 let squareHeld = false;
 let menuOpen = false;
 function updateDeviceBar(): void {
   const connected = liveSession === session && session.isConnected;
-  const battery = connected
-    ? session.messageCounts.has(0x04) ? `▣ ${session.level.battery}%` : '▣ —%'
-    : 'OP-Z NOT CONNECTED';
-  const transport = `${view?.isPlaying() ? '▶' : '■'} ${session.activePattern + 1}`;
-  if (batteryLabel && batteryLabel.textContent !== battery) batteryLabel.textContent = battery;
-  if (transportLabel && transportLabel.textContent !== transport) transportLabel.textContent = transport;
-  const held = connected && Boolean(view?.autoRoute) && session.ui.screen;
-  if (held !== squareHeld) {
-    squareHeld = held;
-    setDeviceMenu(held);
+  const level = connected && session.messageCounts.has(0x04) ? Math.min(100, session.level.battery) : null;
+  const battery = connected ? level === null ? '— %' : `${level} %` : 'NOT CONNECTED';
+  if (batteryLabel && batteryLabel.textContent !== battery) {
+    batteryLabel.textContent = battery;
+    batteryFill?.setAttribute('width', String(24 * (level ?? 0) / 100));
   }
+  const pattern = String(session.activePattern + 1);
+  if (transportLabel && transportLabel.textContent !== pattern) transportLabel.textContent = pattern;
+  const playing = String(Boolean(view?.isPlaying()));
+  if (transportButton && transportButton.dataset.playing !== playing) transportButton.dataset.playing = playing;
+  const held = connected && session.ui.screen;
+  if (held && !squareHeld) setDeviceMenu(!menuOpen);
+  squareHeld = held;
 }
 
 function setDeviceMenu(open: boolean): void {
   menuOpen = open;
   if (deviceMenu) deviceMenu.hidden = !open;
   deviceMenuToggle?.setAttribute('aria-expanded', String(open));
+  if (open) {
+    const current = view?.autoRoute ? 'follow' : view?.currentScreen;
+    const active = devicePages.find((button) => button.dataset.devicePage === current) ?? devicePages[0];
+    for (const button of devicePages) {
+      if (button === active) button.setAttribute('aria-current', 'page');
+      else button.removeAttribute('aria-current');
+    }
+    active?.focus();
+  }
 }
 
 debugToggle?.addEventListener('click', () => {
@@ -162,7 +176,15 @@ document.addEventListener('fullscreenchange', () => {
   fullscreenToggle?.setAttribute('aria-pressed', String(fullscreen));
 });
 deviceMenuToggle?.addEventListener('click', () => setDeviceMenu(!menuOpen));
-for (const button of document.querySelectorAll<HTMLButtonElement>('[data-device-page]')) {
+document.getElementById('device-battery-button')?.addEventListener('click', () => {
+  if (view?.currentScreen === 'devices') view.setAutoRoute(true);
+  else view?.navigateTo('devices');
+});
+transportButton?.addEventListener('click', () => view?.togglePlay());
+deviceMenu?.addEventListener('click', (event) => {
+  if (event.target === deviceMenu) setDeviceMenu(false);
+});
+for (const button of devicePages) {
   button.addEventListener('click', () => {
     const page = button.dataset.devicePage;
     if (page === 'follow') view?.setAutoRoute(true);
@@ -776,6 +798,14 @@ wrAudit?.addEventListener('click', () => {
 
 // ---- keyboard shortcuts ----
 window.addEventListener('keydown', (e) => {
+  if (menuOpen) {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      setDeviceMenu(false);
+      deviceMenuToggle?.focus();
+    }
+    return;
+  }
   if (e.key === 'ArrowRight' || (e.key === 'Tab' && !e.shiftKey)) { e.preventDefault(); view?.nextScreen(); }
   else if (e.key === 'ArrowLeft' || (e.key === 'Tab' && e.shiftKey)) { e.preventDefault(); view?.prevScreen(); }
   else if (e.code === 'Space') { e.preventDefault(); view?.togglePlay(); }

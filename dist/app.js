@@ -6094,30 +6094,46 @@ var bleTransport = null;
 var bleBusy = false;
 var gamepadTick = null;
 var batteryLabel = document.getElementById("device-battery");
+var batteryFill = document.getElementById("device-battery-fill");
 var transportLabel = document.getElementById("device-transport");
+var transportButton = document.getElementById("device-transport-button");
 var debugToggle = document.getElementById("debug-toggle");
 var fullscreenToggle = document.getElementById("fullscreen-toggle");
 var deviceMenu = document.getElementById("device-menu");
 var deviceMenuToggle = document.getElementById("device-menu-toggle");
+var devicePages = Array.from(document.querySelectorAll("[data-device-page]"));
 var debugHidden = false;
 var squareHeld = false;
 var menuOpen = false;
 function updateDeviceBar() {
   const connected = liveSession === session && session.isConnected;
-  const battery = connected ? session.messageCounts.has(4) ? `\u25A3 ${session.level.battery}%` : "\u25A3 \u2014%" : "OP-Z NOT CONNECTED";
-  const transport = `${view?.isPlaying() ? "\u25B6" : "\u25A0"} ${session.activePattern + 1}`;
-  if (batteryLabel && batteryLabel.textContent !== battery) batteryLabel.textContent = battery;
-  if (transportLabel && transportLabel.textContent !== transport) transportLabel.textContent = transport;
-  const held = connected && Boolean(view?.autoRoute) && session.ui.screen;
-  if (held !== squareHeld) {
-    squareHeld = held;
-    setDeviceMenu(held);
+  const level = connected && session.messageCounts.has(4) ? Math.min(100, session.level.battery) : null;
+  const battery = connected ? level === null ? "\u2014 %" : `${level} %` : "NOT CONNECTED";
+  if (batteryLabel && batteryLabel.textContent !== battery) {
+    batteryLabel.textContent = battery;
+    batteryFill?.setAttribute("width", String(24 * (level ?? 0) / 100));
   }
+  const pattern = String(session.activePattern + 1);
+  if (transportLabel && transportLabel.textContent !== pattern) transportLabel.textContent = pattern;
+  const playing = String(Boolean(view?.isPlaying()));
+  if (transportButton && transportButton.dataset.playing !== playing) transportButton.dataset.playing = playing;
+  const held = connected && session.ui.screen;
+  if (held && !squareHeld) setDeviceMenu(!menuOpen);
+  squareHeld = held;
 }
 function setDeviceMenu(open) {
   menuOpen = open;
   if (deviceMenu) deviceMenu.hidden = !open;
   deviceMenuToggle?.setAttribute("aria-expanded", String(open));
+  if (open) {
+    const current = view?.autoRoute ? "follow" : view?.currentScreen;
+    const active = devicePages.find((button6) => button6.dataset.devicePage === current) ?? devicePages[0];
+    for (const button6 of devicePages) {
+      if (button6 === active) button6.setAttribute("aria-current", "page");
+      else button6.removeAttribute("aria-current");
+    }
+    active?.focus();
+  }
 }
 debugToggle?.addEventListener("click", () => {
   debugHidden = !debugHidden;
@@ -6139,7 +6155,15 @@ document.addEventListener("fullscreenchange", () => {
   fullscreenToggle?.setAttribute("aria-pressed", String(fullscreen));
 });
 deviceMenuToggle?.addEventListener("click", () => setDeviceMenu(!menuOpen));
-for (const button6 of document.querySelectorAll("[data-device-page]")) {
+document.getElementById("device-battery-button")?.addEventListener("click", () => {
+  if (view?.currentScreen === "devices") view.setAutoRoute(true);
+  else view?.navigateTo("devices");
+});
+transportButton?.addEventListener("click", () => view?.togglePlay());
+deviceMenu?.addEventListener("click", (event) => {
+  if (event.target === deviceMenu) setDeviceMenu(false);
+});
+for (const button6 of devicePages) {
   button6.addEventListener("click", () => {
     const page = button6.dataset.devicePage;
     if (page === "follow") view?.setAutoRoute(true);
@@ -6718,6 +6742,14 @@ wrAudit?.addEventListener("click", () => {
   setSource("AUDIT \xB7 transaction diff / frames / phase history exported");
 });
 window.addEventListener("keydown", (e) => {
+  if (menuOpen) {
+    if (e.key === "Escape") {
+      e.preventDefault();
+      setDeviceMenu(false);
+      deviceMenuToggle?.focus();
+    }
+    return;
+  }
   if (e.key === "ArrowRight" || e.key === "Tab" && !e.shiftKey) {
     e.preventDefault();
     view?.nextScreen();
